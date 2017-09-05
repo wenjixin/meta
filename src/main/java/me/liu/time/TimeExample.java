@@ -12,9 +12,28 @@ public class TimeExample {
 
     public static void main(String[] args) {
 
+        //test();
+
+
+        Instant endInstant = Instant.now().truncatedTo(ChronoUnit.HOURS);
+
+        for (int i = 0; i < 24; i++) {
+
+            Instant end = endInstant.minus(Duration.ofHours(i));
+
+            Instant start = end.minus(Duration.ofDays(1));
+
+            System.out.println("st:" + start + " " + " en" + end);
+        }
+
+
+    }
+
+    private static void test() {
         LocalTime now = LocalTime.now();
 
         System.out.println(now);
+
 
         Instant endInstant = Instant.now().truncatedTo(ChronoUnit.HOURS);
 
@@ -34,11 +53,9 @@ public class TimeExample {
         ZonedDateTime dateTime = LocalDateTime.parse(str, formatter).atZone(ZoneId.systemDefault());
 
 
-
-        ZonedDateTime dateTime2  = ZonedDateTime.now();
+        ZonedDateTime dateTime2 = ZonedDateTime.now();
         System.out.println(formatter.format(dateTime2));
 
         System.out.println(dateTime);
-
     }
 }
