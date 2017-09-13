@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -40,20 +41,28 @@ public class DistributedLockV2 implements LLock {
 
 
         try {
-
             myNode = client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(LOCK + "/lock-");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
-            boolean hasLock = false;
 
-            while (!hasLock) {
+        boolean hasLock = false;
+
+        while (!hasLock) {
+
+            try {
 
                 List<String> childrens = client.getChildren().forPath(LOCK);
                 Collections.sort(childrens);
 
                 String nodeFromPath = ZKPaths.getNodeFromPath(myNode);
+
                 int myIndex = childrens.indexOf(nodeFromPath);
 
                 if (nodeFromPath.equals(childrens.get(0))) {
+
+                    System.out.println("nodeFromPath:" + nodeFromPath);
 
                     hasLock = true;
 
@@ -77,11 +86,11 @@ public class DistributedLockV2 implements LLock {
                 } catch (KeeperException e) {
 
                 }
+
+            } catch (Exception e) {
+
             }
 
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
 
@@ -140,19 +149,23 @@ public class DistributedLockV2 implements LLock {
         server.start();
 
         ExecutorService service = Executors.newFixedThreadPool(100);
-        for (int i = 0; i < 5; i++) {
+
+
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+
+
+        for (int i = 0; i < 100; i++) {
             service.execute(() -> {
                 DistributedLockV2 test = new DistributedLockV2(server.getConnectString());
                 try {
                     test.lock();
                     System.out.println(Thread.currentThread().getId() + " hold the lock");
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-                test.unlock();
-
                 System.out.println(Thread.currentThread().getId() + " unlock");
+                test.unlock();
+                System.out.println(atomicInteger.incrementAndGet());
             });
         }
 
